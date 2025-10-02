@@ -77,6 +77,50 @@ with language(language) as lang:
 ```
 
 
+## LazyTemplate
+
+LazyTemplate enables partial formatting and deferred evaluation.
+
+Separate declaration
+
+```python
+from magic_i18n import LazyTemplate
+
+lazy_template = LazyTemplate('привет ${name}, открой ${target}')
+```
+
+Get LazyTemplate from Text container
+
+```python
+message = Text(en='hello ${name}, open ${target}', ru='привет ${name}, открой ${target}')
+
+lazy_template = message | 'en'
+```
+
+Usage
+
+```python
+print(lazy_template)
+# print `привет ${name}, открой ${target}`
+
+lazy_template % 'Alex'
+print(lazy_template)
+# print `привет Alex, открой ${target}`
+
+lazy_template % 'Telegram'
+print(lazy_template)
+# print `привет Alex, открой Telegram`
+
+lazy_template % {'target': 'Site'}  # set or replace
+print(lazy_template)
+# print `привет Alex, открой Site`
+
+lazy_template(target='Calc')  # set or replace
+print(lazy_template)
+# print `привет Alex, открой Calc`
+```
+
+
 ## ASGI middleware
 The ASGI middleware retrieves the language from the `Accept-Language` header 
 and sets it as the current language if it's present in the `accept_languages` option.

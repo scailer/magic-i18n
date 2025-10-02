@@ -3,9 +3,10 @@ Changelog
 =========
 
 
-0.1 (2025-08-06)
+0.1 (2025-10-02)
 ================
 
 - Add text/template class with translation
 - Add set language utility
 - Add ASGI middleware
+- Add LazyTemplate

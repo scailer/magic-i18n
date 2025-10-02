@@ -2,10 +2,13 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 
 from .asgi import I18nMiddleware
-from .text import DEFAULT_LANG, LANG, LangType, Text, set_default_language
+from .text import DEFAULT_LANG, LANG, LangType, Text, LazyTemplate, set_default_language
 
-__version__ = '0.1b'
-__all__ = ('DEFAULT_LANG', 'LANG', 'I18nMiddleware', 'Text', 'language', 'set_default_language')
+__version__ = '0.1'
+__all__ = (
+    'DEFAULT_LANG', 'LANG', 'I18nMiddleware', 'Text',
+    'LazyTemplate', 'language', 'set_default_language'
+)
 
 
 @contextmanager

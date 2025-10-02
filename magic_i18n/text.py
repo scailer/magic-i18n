@@ -83,9 +83,10 @@ class Text(Template):
         return self.substitute(**data)
 
     def __mod__(self, data: Any) -> str:  # noqa ANN401
+        ''' Strict formatting '''
         match data:
             case dict():
-                return self.substitute(**data)
+                return self(**data)
 
             case tuple() | list() | set():
                 ids = self.get_identifiers()
@@ -97,7 +98,7 @@ class Text(Template):
                     raise TypeError('not all arguments converted during string formatting')
 
                 _data = dict(zip(self.get_identifiers(), data, strict=True))
-                return self.substitute(**_data)
+                return self(**_data)
 
             case _:
                 ids = self.get_identifiers()
@@ -108,4 +109,44 @@ class Text(Template):
                 if len(ids) > 1:
                     raise TypeError('not enough arguments for format string')
 
-                return self.substitute(**{ids[0]: data})
+                return self(**{ids[0]: data})
+
+    def __or__(self, lang: LangType) -> 'LazyTemplate':
+        ''' Get LazyTemplate by specified language '''
+        return LazyTemplate(self.translations.get(lang, self.fallback))
+
+
+class LazyTemplate(Template):
+    '''
+        LazyTemplate enables partial formatting and safe deferred evaluation.
+    '''
+    args: dict[str, str]
+
+    def __init__(self, template: str) -> None:
+        super().__init__(template)
+        self.args = {}
+
+    def __str__(self) -> str:
+        return self.safe_substitute(**self.args)
+
+    def __call__(self, **data: Any) -> 'LazyTemplate':
+        self.args.update({name: str(value) for name, value in data.items()})
+        return self
+
+    def __mod__(self, data: Any) -> 'LazyTemplate':
+        ''' Partial formatting '''
+
+        _data: dict = {}
+        ids = [_id for _id in self.get_identifiers() if _id not in self.args]
+
+        match data:
+            case dict():
+                _data = data
+            case tuple() | list() | set():
+                if ids:
+                    _data = dict(zip(ids, data, strict=False))
+            case _:
+                if ids:
+                    _data = {ids[0]: data}
+
+        return self(**_data)

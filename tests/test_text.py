@@ -3,7 +3,12 @@ import random
 
 import pytest
 
-from magic_i18n import LANG, Text, language
+from magic_i18n import LANG, Text, LazyTemplate, language, set_default_language
+
+
+async def test_set_default_language():
+    set_default_language('ru')
+    set_default_language('en')
 
 
 async def test_language_ok():
@@ -169,3 +174,40 @@ async def test_Text_str_ok_async():
 
     for lang, val in zip(langs, results):
         assert text.translations.get(lang) == val
+
+def test_Text_or_ok():
+    text = Text(en='hello ${name}', ru='привет ${name}')
+    lazy_template = text | 'ru'
+
+    assert isinstance(lazy_template, LazyTemplate)
+    assert lazy_template.template == text.translations['ru']
+
+
+def test_LazyTemplate_str_ok():
+    assert str(LazyTemplate('hello')) == 'hello'
+    assert str(LazyTemplate('hello ${name}')) == 'hello ${name}'
+
+
+def test_LazyTemplate_mod_ok_simple():
+    assert str(LazyTemplate('hello') % 'Alex') == 'hello'
+    assert str(LazyTemplate('hello') % ('Alex', 'else')) == 'hello'
+    assert str(LazyTemplate('hello') % {'name': 'Alex', 'a': 'else'}) == 'hello'
+
+def test_LazyTemplate_mod_ok_one_argument():
+    assert str(LazyTemplate('hello ${name}') % 'Alex') == 'hello Alex'
+    assert str(LazyTemplate('hello ${name}') % {'name': 'Alex'}) == 'hello Alex'
+    assert str(LazyTemplate('hello ${name}') % ('Alex', 'other')) == 'hello Alex'
+    assert str(LazyTemplate('hello ${name}') % {'name': 'Alex', 'a': 'other'}) == 'hello Alex'
+
+def test_LazyTemplate_mod_ok_partial():
+    lazy_template = LazyTemplate('hello ${name}, welcome to ${team}, visit ${url}')
+    assert str(lazy_template) == 'hello ${name}, welcome to ${team}, visit ${url}'
+
+    lazy_template % 'Alex'
+    assert str(lazy_template) == 'hello Alex, welcome to ${team}, visit ${url}'
+
+    lazy_template % ('Team', 'URL')
+    assert str(lazy_template) == 'hello Alex, welcome to Team, visit URL'
+
+    lazy_template % {'team': 'MyTeam'}
+    assert str(lazy_template) == 'hello Alex, welcome to MyTeam, visit URL'
