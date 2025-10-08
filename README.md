@@ -17,13 +17,16 @@ Key features:
 - Texts are defined separately from their usage location and passed as variables.
 - Supports temporary (local) language overrides.
 - Can be used both standalone and within ASGI applications.
+- Utility for checking the correctness of texts for CICD.
 
 
 Provides:
 
 - container for text/template variations,
 - language context manager,
+- lazy template for partial text formatting,
 - middleware for ASGI-compatible frameworks.
+- checking utility.
 
 
 ## Install
@@ -54,17 +57,6 @@ message = Text('fail', en='text', ru='текст')
 print(message)  # print `текст` (ru - default language)
 ```
 
-Template in different languages
-
-```python
-message = Text(en='hello ${name}', ru='привет ${name}')
-
-print(message % 'Alex')  
-print(message % ('Alex',))  
-print(message % {'name': 'Alex'})  
-# all prints `привет Alex` (ru - default language)
-```
-
 Context manager for temporarily changing the current language.
 
 ```python
@@ -76,30 +68,31 @@ with language(language) as lang:
     print(message % name)
 ```
 
-
-## LazyTemplate
-
-LazyTemplate enables partial formatting and deferred evaluation.
-
-Separate declaration
+Get a string in the specified language
 
 ```python
-from magic_i18n import LazyTemplate
-
-lazy_template = LazyTemplate('привет ${name}, открой ${target}')
+print(message | 'ru')
+print(message | lang)
 ```
 
-Get LazyTemplate from Text container
+## Template formatting
+
+Template in different languages
 
 ```python
-message = Text(en='hello ${name}, open ${target}', ru='привет ${name}, открой ${target}')
+message = Text(en='hello ${name}', ru='привет ${name}')
 
-lazy_template = message | 'en'
+print(message % 'Alex')  
+print(message % ('Alex',))  
+print(message % {'name': 'Alex'})  
+# all prints `привет Alex` (ru - default language)
 ```
 
-Usage
+Partial formatting and deferred evaluation.
 
 ```python
+lazy_template = Text(en='hello ${name}, open ${target}', ru='привет ${name}, открой ${target}')
+
 print(lazy_template)
 # print `привет ${name}, открой ${target}`
 
@@ -116,8 +109,8 @@ print(lazy_template)
 # print `привет Alex, открой Site`
 
 lazy_template(target='Calc')  # set or replace
-print(lazy_template)
-# print `привет Alex, открой Calc`
+print(lazy_template | 'en')
+# print `hello Alex, open Calc`
 ```
 
 
@@ -145,6 +138,31 @@ The header parser pattern `r'([a-zA-Z]{2}[-a-zA-Z0-9]*)'` can be modified in
 
 ```python
 I18nMiddleware.header_parser = re.compile(...)
+```
+
+
+## Linter
+
+Provides:
+- Check for required languages
+- Check that all versions of the text templates have the same arguments.
+- Prohibit text duplication
+- Spell check (requires pyspellchecker)
+
+```bash
+$ magic-i18n --help
+...
+
+$ magic-i18n example.lint_erorrs
+Run magic-i18n linter
+  load [examples.lint_errors]
+5 text objects found
+[check-arguments] Text(asd | AD4JT53R): The `ru` arguments differ from fallback
+[check-arguments] Text(asd ${a} | ADJ6CPYN): The `ru` arguments differ from fallback
+[deny-doubles] Text(asd ${a} | ADJ6CPYN): Double detected
+[required-languages] Text(asd проверка % & тест? | C2E2VTY): Required language(s) `en` are not provided
+[required-languages] Text(asd | AD4JT53R): Required language(s) `en` are not provided
+Failed with 5 errors
 ```
 
 

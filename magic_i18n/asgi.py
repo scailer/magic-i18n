@@ -3,6 +3,7 @@ import typing
 
 from .text import LANG, LangType
 
+
 Scope = typing.MutableMapping[str, typing.Any]
 Message = typing.MutableMapping[str, typing.Any]
 
@@ -13,14 +14,14 @@ Application = typing.Callable[[Scope, Receive, Send], typing.Awaitable[None]]
 
 class I18nMiddleware:
     '''
-        The ASGI middleware retrieves the language from the `Accept-Language` header 
+        The ASGI middleware retrieves the language from the `Accept-Language` header
         and sets it as the current language if it's present in the `accept_languages` option.
 
         Options:
         - `application` - wrapped ASGI application.
-        - `default_language` - (default: en) Used when the user's language is unknown or 
+        - `default_language` - (default: en) Used when the user's language is unknown or
             unavailable. This is the default only for ASGI and does not call `set_default_language`.
-        - `accept_languages` - list of available languages. The default_language must be included 
+        - `accept_languages` - list of available languages. The default_language must be included
             in this list.
 
         ```
@@ -31,7 +32,7 @@ class I18nMiddleware:
             )
         ```
 
-        The header parser pattern `r'([a-zA-Z]{2}[-a-zA-Z0-9]*)'` can be modified in 
+        The header parser pattern `r'([a-zA-Z]{2}[-a-zA-Z0-9]*)'` can be modified in
         `header_parser` class attribute.
 
         ```
