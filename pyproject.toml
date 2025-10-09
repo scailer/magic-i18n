@@ -10,13 +10,13 @@ authors = [
 description = 'Text internationalization with async context magic'
 readme = 'README.md'
 requires-python = '>=3.11'
-license = {file = 'LICENSE.md'}
+license = 'MIT'
+license-files = ['LICENSE.md']
 keywords = ['i18n', 'internationalization', 'async', 'contextvar', 'asgi']
 classifiers = [
     'Development Status :: 4 - Beta',
     'Environment :: Plugins',
     'Intended Audience :: Developers',
-    'License :: OSI Approved :: MIT License',
     'Programming Language :: Python',
     'Programming Language :: Python :: 3',
     'Programming Language :: Python :: 3.11',
