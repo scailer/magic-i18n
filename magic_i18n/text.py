@@ -1,16 +1,45 @@
+from collections.abc import Iterator
+from contextlib import contextmanager
 from contextvars import ContextVar
+from copy import deepcopy
 from string import Template
-from typing import Any, TypeAlias
+from typing import Any
 
-LangType: TypeAlias = str
+from .utils import short_hash
+
+
+LangType = str
 DEFAULT_LANG: LangType = 'en'
 LANG: ContextVar[LangType] = ContextVar('lang')
+TEXT_REGISTRY: list['Text'] = []
 
 
 def set_default_language(lang: LangType) -> None:
     ''' Global set default language '''
-    global DEFAULT_LANG
+    global DEFAULT_LANG  # noqa PLW0603
     DEFAULT_LANG = lang
+
+
+@contextmanager
+def language(lang: LangType) -> Iterator[LangType]:
+    '''
+        This is a context manager for temporarily changing the current language.
+
+        ```
+        with language('ru'):
+            send(message % name)
+
+        with language(user.language) as lang:
+            log.debug('Send with language %s', lang)
+            send(message % name)
+        ```
+    '''
+    origin_lang = LANG.get(DEFAULT_LANG)
+    LANG.set(lang)
+
+    yield lang
+
+    LANG.set(origin_lang)
 
 
 class Text(Template):
@@ -18,7 +47,7 @@ class Text(Template):
         Text class serves as a container for representing text in different languages.
         It automatically selects the appropriate language based on the current context.
         If a suitable translation isn't found, a fallback value or the default language
-        is returned. For simple usage, the class behaves like a regular string, 
+        is returned. For simple usage, the class behaves like a regular string,
         but it also allows for field replacement using a template with the operator.
 
         Declaration examples:
@@ -49,14 +78,15 @@ class Text(Template):
             message = Text(en='hello ${name}', ru='привет ${name}')
 
             # print `текст` (ru - default language)
-            print(message % 'Alex')  
-            print(message % ('Alex',))  
-            print(message % {'name': 'Alex'})  
+            print(message % 'Alex')
+            print(message % ('Alex',))
+            print(message % {'name': 'Alex'})
         ```
     '''
 
     fallback: str
     translations: dict[LangType, str]
+    args: dict[str, str]  # for lazy formatting
 
     @property
     def template(self) -> str:
@@ -67,22 +97,56 @@ class Text(Template):
         raise TypeError('template is read-only')
 
     def __init__(self, fallback: str = '', **translations: str) -> None:
-        self.fallback = fallback or translations.get(DEFAULT_LANG, '<no-translation>')
+        self.fallback = fallback or translations.get(DEFAULT_LANG, list(translations.values())[0])
         self.translations = translations
+        self.args = {}
+        TEXT_REGISTRY.append(self)
 
     def __repr__(self) -> str:
-        return f'Text({self.fallback})'
+        _args = ''
+
+        if self.args:
+            _args = ' ' + ' '.join(f'{k}={v!r}' for k, v in self.args.items())
+
+        return f'Text({self.fallback}{_args} | {short_hash(self.fallback)})'
+
+    def __call__(self, **data: Any) -> 'Text':  # noqa ANN401
+        ''' Make filled in copy '''
+        obj = self if self.args else deepcopy(self)
+        obj.args.update({name: str(value) for name, value in data.items()})
+        return obj
 
     def __str__(self) -> str:
-        if self.get_identifiers():
-            raise TypeError('string formatting required')
+        return self.safe_substitute(**self.args)
 
-        return self.template
+    def __mod__(self, data: Any) -> 'Text':  # noqa ANN401
+        ''' Partial formatting '''
+        _data: dict = {}
+        ids = [_id for _id in self.get_identifiers() if _id not in self.args]
 
-    def __call__(self, **data: Any) -> str:
-        return self.substitute(**data)
+        match data:
+            case dict():
+                _data = data
+            case tuple() | list() | set():
+                if ids:
+                    _data = dict(zip(ids, data, strict=False))
+            case _:
+                if ids:
+                    _data = {ids[0]: data}
 
-    def __mod__(self, data: Any) -> str:  # noqa ANN401
+        return self(**_data)
+
+    def __or__(self, lang: LangType) -> str:
+        ''' Text in specified language '''
+        with language(lang):
+            return str(self)
+
+
+class StrictText(Text):
+    def __str__(self) -> str:
+        return self.substitute(self.args)
+
+    def __mod__(self, data: Any) -> Text:  # noqa ANN401
         ''' Strict formatting '''
         match data:
             case dict():
@@ -110,43 +174,3 @@ class Text(Template):
                     raise TypeError('not enough arguments for format string')
 
                 return self(**{ids[0]: data})
-
-    def __or__(self, lang: LangType) -> 'LazyTemplate':
-        ''' Get LazyTemplate by specified language '''
-        return LazyTemplate(self.translations.get(lang, self.fallback))
-
-
-class LazyTemplate(Template):
-    '''
-        LazyTemplate enables partial formatting and safe deferred evaluation.
-    '''
-    args: dict[str, str]
-
-    def __init__(self, template: str) -> None:
-        super().__init__(template)
-        self.args = {}
-
-    def __str__(self) -> str:
-        return self.safe_substitute(**self.args)
-
-    def __call__(self, **data: Any) -> 'LazyTemplate':
-        self.args.update({name: str(value) for name, value in data.items()})
-        return self
-
-    def __mod__(self, data: Any) -> 'LazyTemplate':
-        ''' Partial formatting '''
-
-        _data: dict = {}
-        ids = [_id for _id in self.get_identifiers() if _id not in self.args]
-
-        match data:
-            case dict():
-                _data = data
-            case tuple() | list() | set():
-                if ids:
-                    _data = dict(zip(ids, data, strict=False))
-            case _:
-                if ids:
-                    _data = {ids[0]: data}
-
-        return self(**_data)

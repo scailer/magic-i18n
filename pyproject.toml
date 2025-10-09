@@ -35,6 +35,9 @@ Repository = 'https://github.com/scailer/magic-i18n.git'
 Changelog = 'https://github.com/scailer/magic-i18n/blob/master/CHANGELOG'
 
 [project.optional-dependencies]
+spell = [
+    'pyspellchecker',
+]
 dev = [
     'pytest',
     'pytest-asyncio',
@@ -43,7 +46,11 @@ dev = [
     'coverage',
     'ruff',
     'mypy',
+    'pyspellchecker',
 ]
+
+[project.entry-points.'console_scripts']
+magic-i18n = 'magic_i18n.lint:run'
 
 [tool.setuptools.dynamic]
 version = {attr = 'magic_i18n.__version__'}
@@ -53,16 +60,12 @@ where = ['.']
 exclude=['tests.*', 'tests']
 include = ['magic_i18n']
 
-[tool.pytest.ini_options]
-addopts = "--verbose --cov=magic_i18n --cov-report=html --asyncio-mode=auto"
-testpaths = [
-    "tests",
-]
-
-[tool.lint.ruff]
+[tool.ruff]
 line-length = 100
 target-version = 'py313'
 preview = true
+
+[tool.ruff.lint]
 select = [
     'E', 'W', 'PL', 'C90', 'N', 'UP', 'I',
     # pep8-errors, pep8-warn, pylint, mccabe, pep8-naming, pyupgrade, isort
@@ -78,14 +81,14 @@ ignore = [
 ]
 
 
-[tool.lint.ruff.mccabe]
-max-complexity = 10
-
-[tool.lint.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 'tests/*' = [
     'PLR2004',  # Checks for the use of unnamed numerical constants ('magic') values in comparisons
     'PLC1901',  # Checks for comparisons to empty strings
     'ANN',  # flake8-annotations
+]
+'examples/*' = [
+    'T201',  # flake8-print
 ]
 
 [tool.ruff.lint.mccabe]
@@ -118,6 +121,12 @@ disallow_untyped_defs = true
 disallow_incomplete_defs = true
 ignore_missing_imports = true
 
+[tool.pytest.ini_options]
+addopts = "--verbose --cov=magic_i18n --cov-report=html --asyncio-mode=auto"
+testpaths = [
+    "tests",
+]
+
 [tool.coverage.run]
 branch = true
 
@@ -125,3 +134,6 @@ branch = true
 omit = [
     'tests/*',
 ]
+
+[tool.magic-i18n]
+required-languages = ['en']

@@ -4,6 +4,7 @@ import pytest
 
 from magic_i18n import DEFAULT_LANG, LANG, I18nMiddleware
 
+
 DATA = {
     'no-http': ('en', {'type': 'lifespan'}),
     'no-headers': ('en', {'type': 'http'}),
@@ -24,7 +25,7 @@ DATA = {
     ),
     'complex': (
         'fr', {
-            'type': 'http', 
+            'type': 'http',
             'headers': [(b'accept-language', b'de-DA, de;q=0.9, nw;q=0.8, fr;q=0.7, *;q=0.5')]
         }
     ),
@@ -36,9 +37,10 @@ DATA = {
     ),
 }
 
+
 @pytest.fixture(params=list(DATA.values()), ids=list(DATA.keys()))
 def data(request):
-    return request.param[0], request.param[1] 
+    return request.param[0], request.param[1]
 
 
 async def test_I18nMiddleware(data):
