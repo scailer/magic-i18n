@@ -113,7 +113,7 @@ class Text(Template):
     def __call__(self, **data: Any) -> 'Text':  # noqa ANN401
         ''' Make filled in copy '''
         obj = self if self.args else deepcopy(self)
-        obj.args.update({name: str(value) for name, value in data.items()})
+        obj.args.update({name: value for name, value in data.items()})
         return obj
 
     def __str__(self) -> str:
