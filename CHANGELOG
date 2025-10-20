@@ -3,6 +3,12 @@ Changelog
 =========
 
 
+0.3 (2025-10-20)
+================
+
+- Allow a template in template with lazy evaluation
+
+
 0.2 (2025-10-09)
 ================
 

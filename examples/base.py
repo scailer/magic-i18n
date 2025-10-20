@@ -50,5 +50,10 @@ print(lazy_template | 'en')
 # print `hello Alex, open Site`
 
 lazy_template(target='Calc')
-print(lazy_template | 'en')
-# print `hello Alex, open Calc`
+print(lazy_template | None)
+# print `привет Alex, открой Calc`
+
+# Text in Text substitutuion
+target = Text(en='chat', ru='чат')
+invite = Text(en='${name} invite to ${target}', ru='$name приглашает в $target')
+print(invite % ('Name', target) | 'ru')

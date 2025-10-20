@@ -38,7 +38,7 @@ def test_Text_repr_ok():
     assert repr(text) == 'Text(${a} fallback | NVGCEQY)'
 
     text = Text('${a} fallback') % 1
-    assert repr(text) == 'Text(${a} fallback a=\'1\' | NVGCEQY)'
+    assert repr(text) == 'Text(${a} fallback a=1 | NVGCEQY)'
 
 
 def test_Text_str_ok_simple():
